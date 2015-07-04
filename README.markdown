@@ -51,3 +51,7 @@ Why `remail.sh` instead of, say, [`premail`](http://manpages.ubuntu.com/manpages
 * Portability: `remail.sh` is a simple BASH shell script. No need to install a package. Just download and run it in any BASH shell.
 
 Also, bluntly, because I wanted an excuse to do more shell scripting. I'm masochistic like that. :P
+
+## In Memoriam
+
+Len Sassaman (1980-2011). [I miss you.](https://maymay.net/blog/2015/07/03/in-memoriam/)
