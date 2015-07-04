@@ -104,6 +104,25 @@ function version () {
     echo "$PROGRAM version $VERSION"
 }
 
+# Helper functions.
+function addDirectives () {
+    printf "::\n"
+    for directive in "$@"; do
+        addHeader "$directive"
+    done
+    printf "\n"
+}
+function addHeaders () {
+    printf "##\n"
+    for header in "$@"; do
+        addHeader "$header"
+    done
+    printf "\n"
+}
+function addHeader () {
+    printf "%s\n" "$1"
+}
+
 # Internal variables and initializations.
 readonly PROGRAM=`basename "$0"`
 readonly VERSION=0.1
@@ -177,8 +196,15 @@ if [ ! -r "$MSG_FILE" ]; then
     exit $E_BAD_OPTION;
 fi
 
-# Prepare message to be sent.
-printf "::\nAnon-To: %s\n\n" "$RCPT_TO" > "$EMAIL"
+# Prepare message directives.
+declare -a directives
+directives[0]="Anon-To: $RCPT_TO"
+if [ $DEBUG -eq 1 ]; then
+    directives[1]="Latent-Time: +0:00"
+fi
+addDirectives "${directives[@]}" > "$EMAIL"
+
+# Prepare message itself.
 if [ "$ENCRYPT_MESSAGE" -eq 1 ]; then
     gpg2 --encrypt --armor -r "$RCPT_TO" < "$MSG_FILE" >> "$EMAIL"
 else
@@ -204,13 +230,18 @@ for ((i=$#; i > 0; i--)); do
             echo "================================="
         fi
         gpg2 --encrypt --armor "${recipient_opts[@]}" < "$EMAIL" >| "$EMAIL.next"
-        printf "::\nEncrypted: PGP\n\n" | cat - "$EMAIL.next" >| "$EMAIL"
+        addDirectives "Encrypted: PGP" | cat - "$EMAIL.next" >| "$EMAIL"
     fi
 
     # Do we have another remailer in the chain?
     # (We don't if the "next remailer" is just the program name, position $0.)
     if [ $NEXT_REMAILER -a "$NEXT_REMAILER" != "$0" ]; then
-        printf "::\nAnon-To: %s\n\n" "$THIS_REMAILER" | cat - "$EMAIL" >| "$EMAIL.next"
+        declare -a directives
+        directives[0]="Anon-To: $THIS_REMAILER"
+        if [ $DEBUG -eq 1 ]; then
+            directives[1]="Latent-Time: +0:00"
+        fi
+        addDirectives "${directives[@]}" | cat - "$EMAIL" >| "$EMAIL.next"
         mv -f "$EMAIL.next" "$EMAIL"
     fi
 done
